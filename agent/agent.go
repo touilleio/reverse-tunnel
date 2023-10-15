@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
 	"log"
 	"net"
@@ -28,10 +30,12 @@ var dialer = websocket.DefaultDialer
 
 // Agent tunnels remote port on a gateway server to local destination.
 type Agent struct {
-	gatewayURL  string
-	key         string
-	service     ports.NetPort
-	destination string
+	gatewayURL           string
+	key                  string
+	service              ports.NetPort
+	destination          string
+	uplinkBytesCounter   prometheus.Counter
+	downlinkBytesCounter prometheus.Counter
 }
 
 // Start starts tunneling agents with given configurations. The agents and
@@ -44,11 +48,16 @@ func Start(conf config.Agent, ctx context.Context) error {
 	tasks := taskch.New()
 
 	for _, forw := range conf.Forwards {
+		upstreamBytesCounter := service.UplinkBytesCounterVec.WithLabelValues(forw.Destination)
+		downstreamBytesCounter := service.DownlinkBytesCounterVec.WithLabelValues(forw.Destination)
+
 		agent := Agent{
-			gatewayURL:  conf.GatewayURL,
-			key:         conf.AuthKey,
-			service:     forw.Port,
-			destination: forw.Destination,
+			gatewayURL:           conf.GatewayURL,
+			key:                  conf.AuthKey,
+			service:              forw.Port,
+			destination:          forw.Destination,
+			uplinkBytesCounter:   upstreamBytesCounter,
+			downlinkBytesCounter: downstreamBytesCounter,
 		}
 
 		tasks.Go(func() error {
@@ -64,6 +73,11 @@ func Start(conf config.Agent, ctx context.Context) error {
 			}
 		})
 	}
+
+	tasks.Go(func() error {
+		http.Handle("/metrics", promhttp.Handler())
+		return http.ListenAndServe(conf.MetricsAddress, nil)
+	})
 
 	return tasks.Wait()
 }
@@ -189,9 +203,11 @@ func (agent *Agent) tunnel(accept service.BinderAcceptMessage, ctx context.Conte
 				return err
 			}
 
-			if _, err := io.CopyBuffer(conn, r, buf); err != nil {
+			n, err := io.CopyBuffer(conn, r, buf)
+			if err != nil {
 				return err
 			}
+			agent.uplinkBytesCounter.Add(float64(n))
 		}
 	})
 
@@ -208,6 +224,7 @@ func (agent *Agent) tunnel(accept service.BinderAcceptMessage, ctx context.Conte
 			if err := ws.WriteMessage(websocket.BinaryMessage, buf[:n]); err != nil {
 				return err
 			}
+			agent.downlinkBytesCounter.Add(float64(n))
 		}
 	})
 

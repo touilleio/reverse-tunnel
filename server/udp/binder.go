@@ -15,6 +15,7 @@ const connTimeout = 3 * time.Second
 // Binder implements service.Binder for UDP tunneling service.
 type Binder struct {
 	addr *net.UDPAddr
+	port int
 }
 
 // Start binds to a UDP port and routes incoming packets to udp.Session objects.
@@ -51,7 +52,7 @@ func (binder Binder) Start(ws *websocket.Conn, store *service.SessionStore) erro
 		if sess, ok := store.Get(peer).(*Session); ok {
 			sess.SendToAgent(buf[:n])
 		} else {
-			sess := NewSession(conn, peer)
+			sess := NewSession(binder.port, conn, peer)
 			id := store.Add(sess)
 
 			err = ws.WriteJSON(service.BinderAcceptMessage{

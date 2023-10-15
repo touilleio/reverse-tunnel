@@ -20,6 +20,7 @@ const (
 // Binder implements service.Binder for TCP tunneling service.
 type Binder struct {
 	addr *net.TCPAddr
+	port int
 }
 
 // Start binds to a TCP port and creates tcp.Session for each client connection.
@@ -56,7 +57,7 @@ func (binder Binder) Start(ws *websocket.Conn, store *service.SessionStore) erro
 			return err
 		}
 
-		sess := NewSession(conn)
+		sess := NewSession(binder.port, conn)
 		id := store.Add(sess)
 
 		err = ws.WriteJSON(service.BinderAcceptMessage{

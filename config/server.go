@@ -10,6 +10,7 @@ import (
 var ServerDefault = Server{
 	ControlAddress: "localhost:9000",
 	TLSConf:        TLSConf{},
+	MetricsAddress: "localhost:8088",
 }
 
 // Server represents a configuration of a reverse tunnel server program.
@@ -17,6 +18,7 @@ type Server struct {
 	ControlAddress string      `yaml:"control_address"`
 	TLSConf        TLSConf     `yaml:"tls"`
 	Agents         []AgentAuth `yaml:"agents"`
+	MetricsAddress string      `yaml:"metrics_address"`
 }
 
 // TLSConf represents TLS configuration for the server.

@@ -15,5 +15,6 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 ENV RTUN_GATEWAY=
 ENV RTUN_KEY=
 ENV RTUN_FORWARD=
+ENV RTUN_METRICS=8080
 ENTRYPOINT ["/reconf", "-w", "/config/rtun.yml", "/rtun"]
 CMD ["-f", "/config/rtun.yml"]

@@ -8,14 +8,16 @@ import (
 
 // AgentDefault is a default agent configuration.
 var AgentDefault = Agent{
-	GatewayURL: "ws://localhost:9000",
+	GatewayURL:     "ws://localhost:9000",
+	MetricsAddress: "localhost:8080",
 }
 
 // Agent represnets a configuration of a reverse tunnel agent program.
 type Agent struct {
-	GatewayURL string    `yaml:"gateway_url"`
-	AuthKey    string    `yaml:"auth_key"`
-	Forwards   []Forward `yaml:"forwards"`
+	GatewayURL     string    `yaml:"gateway_url"`
+	AuthKey        string    `yaml:"auth_key"`
+	Forwards       []Forward `yaml:"forwards"`
+	MetricsAddress string    `yaml:"metrics_address"`
 }
 
 // Forward represents a configuration of a single port forwarding.

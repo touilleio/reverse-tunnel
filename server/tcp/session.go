@@ -2,6 +2,8 @@ package tcp
 
 import (
 	"errors"
+	"fmt"
+	"github.com/snsinfu/reverse-tunnel/server/service"
 	"io"
 	"log"
 	"net"
@@ -14,11 +16,15 @@ import (
 // Session implements service.Session for TCP tunneling.
 type Session struct {
 	conn *net.TCPConn
+	port int
 }
 
 // NewSession creates a Session for tunneling given TCP connection.
-func NewSession(conn *net.TCPConn) *Session {
-	return &Session{conn: conn}
+func NewSession(port int, conn *net.TCPConn) *Session {
+	return &Session{
+		port: port,
+		conn: conn,
+	}
 }
 
 // PeerAddr returns the address of the connected client.
@@ -31,6 +37,9 @@ func (sess Session) Start(ws *websocket.Conn) error {
 	defer sess.conn.Close()
 
 	tasks := taskch.New()
+
+	uplinkCounter := service.UplinkBytesCounterVec.WithLabelValues(fmt.Sprintf("%d/tcp", sess.port))
+	downlinkCounter := service.DownlinkBytesCounterVec.WithLabelValues(fmt.Sprintf("%d/tcp", sess.port))
 
 	// Uplink
 	tasks.Go(func() error {
@@ -45,6 +54,7 @@ func (sess Session) Start(ws *websocket.Conn) error {
 			if err := ws.WriteMessage(websocket.BinaryMessage, buf[:n]); err != nil {
 				return err
 			}
+			uplinkCounter.Add(float64(n))
 		}
 	})
 
@@ -58,9 +68,11 @@ func (sess Session) Start(ws *websocket.Conn) error {
 				return err
 			}
 
-			if _, err := io.CopyBuffer(sess.conn, r, buf); err != nil {
+			n, err := io.CopyBuffer(sess.conn, r, buf)
+			if err != nil {
 				return err
 			}
+			downlinkCounter.Add(float64(n))
 		}
 	})
 

@@ -2,9 +2,9 @@ package server
 
 import (
 	"fmt"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/snsinfu/reverse-tunnel/config"
 )
 
@@ -24,6 +24,19 @@ func Start(conf config.Server) error {
 	e.GET("/tcp/:port", action.GetTCPPort)
 	e.GET("/udp/:port", action.GetUDPPort)
 	e.GET("/session/:id", action.GetSession)
+
+	// Expose metrics via another port.
+	go func() {
+		metrics := echo.New()
+		metrics.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+		err := metrics.Start(conf.MetricsAddress)
+		if err != nil {
+			fmt.Printf("Got an error while starting the metrics server at %s, err = %v", conf.MetricsAddress, err)
+		}
+		// Or, using plain http instead:
+		//http.Handle("/metrics", promhttp.Handler())
+		//err := http.ListenAndServe(conf.MetricsAddress, nil)
+	}()
 
 	if conf.TLSConf.KeyPath != "" {
 		return e.StartTLS(conf.ControlAddress, conf.TLSConf.CertPath, conf.TLSConf.KeyPath)
