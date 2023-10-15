@@ -69,7 +69,7 @@ func run(options docopt.Opts) error {
 func withSignalCancel(ctx context.Context) context.Context {
 	newCtx, cancel := context.WithCancel(ctx)
 
-	sigCh := make(chan os.Signal)
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	go func() {
 		<-sigCh
