@@ -10,7 +10,7 @@ import (
 var ServerDefault = Server{
 	ControlAddress: "localhost:9000",
 	TLSConf:        TLSConf{},
-	MetricsAddress: ":8080",
+	MetricsAddress: "localhost:8088",
 }
 
 // Server represents a configuration of a reverse tunnel server program.

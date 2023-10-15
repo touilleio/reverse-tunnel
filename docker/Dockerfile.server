@@ -14,5 +14,6 @@ COPY --from=builder /srv/docker/rtun-server.yml.template /config/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 ENV RTUN_PORT=9000
 ENV RTUN_AGENT=
+ENV RTUN_METRICS=8080
 ENTRYPOINT ["/reconf", "-w", "/config/rtun-server.yml", "/rtun-server"]
 CMD ["-f", "/config/rtun-server.yml"]

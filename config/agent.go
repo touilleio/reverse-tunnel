@@ -9,7 +9,7 @@ import (
 // AgentDefault is a default agent configuration.
 var AgentDefault = Agent{
 	GatewayURL:     "ws://localhost:9000",
-	MetricsAddress: ":8080",
+	MetricsAddress: "localhost:8080",
 }
 
 // Agent represnets a configuration of a reverse tunnel agent program.
