@@ -33,10 +33,13 @@ func Start(conf config.Server) error {
 	go func() {
 		metrics := echo.New()
 		metrics.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
-		_ = metrics.Start(conf.MetricsAddress)
+		err := metrics.Start(conf.MetricsAddress)
+		if err != nil {
+			fmt.Printf("Got an error whilt starting the metrics server at %s, err = %v", conf.MetricsAddress, err)
+		}
 		// Or, using plain http instead:
 		//http.Handle("/metrics", promhttp.Handler())
-		//_ = http.ListenAndServe(conf.MetricsPort, nil)
+		//_ = http.ListenAndServe(conf.MetricsAddress, nil)
 	}()
 
 	return e.Start(conf.ControlAddress)
