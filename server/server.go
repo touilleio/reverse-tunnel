@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/snsinfu/reverse-tunnel/config"
+	"net/http"
 )
 
 // Start starts tunneling server with given configuration.
@@ -31,12 +32,19 @@ func Start(conf config.Server) error {
 
 	// Expose metrics via another port.
 	go func() {
-		metrics := echo.New()
-		metrics.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
-		_ = metrics.Start(conf.MetricsAddress)
+		//metrics := echo.New()
+		//metrics.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+		//err := metrics.Start(conf.MetricsAddress)
+		//if err != nil {
+		//	fmt.Printf("Got an error while starting the metrics server at %s, err = %v", conf.MetricsAddress, err)
+		//}
 		// Or, using plain http instead:
-		//http.Handle("/metrics", promhttp.Handler())
-		//_ = http.ListenAndServe(conf.MetricsPort, nil)
+		fmt.Printf("Starting the metrics server at %s", conf.MetricsAddress)
+		http.Handle("/metrics", promhttp.Handler())
+		err := http.ListenAndServe(conf.MetricsAddress, nil)
+		if err != nil {
+			fmt.Printf("Got an error while starting the metrics server at %s, err = %v", conf.MetricsAddress, err)
+		}
 	}()
 
 	return e.Start(conf.ControlAddress)
