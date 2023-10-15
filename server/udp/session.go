@@ -2,6 +2,8 @@ package udp
 
 import (
 	"errors"
+	"fmt"
+	"github.com/snsinfu/reverse-tunnel/server/service"
 	"io"
 	"net"
 	"sync/atomic"
@@ -25,11 +27,13 @@ type Session struct {
 	conn   *net.UDPConn
 	peer   *net.UDPAddr
 	idle   int32
+	port   int
 }
 
 // NewSession creates a Session for tunneling UDP packets from/to given peer.
-func NewSession(conn *net.UDPConn, peer *net.UDPAddr) *Session {
+func NewSession(port int, conn *net.UDPConn, peer *net.UDPAddr) *Session {
 	return &Session{
+		port: port,
 		conn: conn,
 		peer: peer,
 	}
@@ -67,6 +71,8 @@ func (sess *Session) PeerAddr() net.Addr {
 func (sess *Session) Start(ws *websocket.Conn) error {
 	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&sess.tunnel)), unsafe.Pointer(ws))
 
+	downlinkCounter := service.DownlinkBytesCounterVec.WithLabelValues(fmt.Sprintf("%d/udp", sess.port))
+
 	// Kill idle session
 	go func() {
 		for range time.NewTicker(sessionTimeout / 2).C {
@@ -99,6 +105,7 @@ func (sess *Session) Start(ws *websocket.Conn) error {
 			if err := sess.SendToClient(buf[:n]); err != nil {
 				return err
 			}
+			downlinkCounter.Add(float64(n))
 		}
 	}
 }

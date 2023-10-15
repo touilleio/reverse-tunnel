@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.0 (unreleased)
+
+- Add agent's metrics for uplink/downlink per destination
+- Add server's metrics for uplink/downlink per port
+
 ## v1.4.0
 
 - Replace Let's Encrypt by simple TLS certificates via `RTUN_TLS_CERT`, `RTUN_TLS_KEY`
