@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
 	"log"
@@ -48,22 +47,9 @@ func Start(conf config.Agent, ctx context.Context) error {
 
 	tasks := taskch.New()
 
-	uplinkBytesCounterVec := promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "uplink_bytes",
-		Help: "",
-	}, []string{
-		"destination",
-	})
-	downlinkBytesCounterVec := promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "downlink_bytes",
-		Help: "",
-	}, []string{
-		"destination",
-	})
-
 	for _, forw := range conf.Forwards {
-		upstreamBytesCounter := uplinkBytesCounterVec.WithLabelValues(forw.Destination)
-		downstreamBytesCounter := downlinkBytesCounterVec.WithLabelValues(forw.Destination)
+		upstreamBytesCounter := service.UplinkBytesCounterVec.WithLabelValues(forw.Destination)
+		downstreamBytesCounter := service.DownlinkBytesCounterVec.WithLabelValues(forw.Destination)
 
 		agent := Agent{
 			gatewayURL:           conf.GatewayURL,
