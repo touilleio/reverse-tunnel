@@ -25,19 +25,22 @@ func Start(conf config.Server) error {
 	e.GET("/udp/:port", action.GetUDPPort)
 	e.GET("/session/:id", action.GetSession)
 
-	if conf.TLSConf.KeyPath != "" {
-		return e.StartTLS(conf.ControlAddress, conf.TLSConf.CertPath, conf.TLSConf.KeyPath)
-	}
-
 	// Expose metrics via another port.
 	go func() {
 		metrics := echo.New()
 		metrics.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
-		_ = metrics.Start(conf.MetricsAddress)
+		err := metrics.Start(conf.MetricsAddress)
+		if err != nil {
+			fmt.Printf("Got an error while starting the metrics server at %s, err = %v", conf.MetricsAddress, err)
+		}
 		// Or, using plain http instead:
 		//http.Handle("/metrics", promhttp.Handler())
-		//_ = http.ListenAndServe(conf.MetricsPort, nil)
+		//err := http.ListenAndServe(conf.MetricsAddress, nil)
 	}()
+
+	if conf.TLSConf.KeyPath != "" {
+		return e.StartTLS(conf.ControlAddress, conf.TLSConf.CertPath, conf.TLSConf.KeyPath)
+	}
 
 	return e.Start(conf.ControlAddress)
 }

@@ -1,9 +1,8 @@
 # Changelog
 
-## v1.5.0 (unreleased)
+## v1.5.0
 
-- Add agent's metrics for uplink/downlink per destination
-- Add server's metrics for uplink/downlink per port
+- Add server's and agent's metrics for uplink/downlink per destination
 
 ## v1.4.0
 
